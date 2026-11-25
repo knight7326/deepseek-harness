@@ -172,7 +172,7 @@ Use the read tool — not shell commands like cat, sed, head, or tail — to ins
 ##### Write 指导
 
 ```markdown
-Read an existing file before overwriting it with write and prefer edit for targeted changes.
+Read an existing file before overwriting it with write and prefer edit for targeted changes. Never create documentation files (*.md) or README files unless the user explicitly requests them. Only use emojis if the user explicitly requests them.
 ```
 
 ##### Edit 指导

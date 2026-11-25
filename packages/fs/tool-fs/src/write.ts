@@ -67,6 +67,8 @@ export function applyWriteTool(ctx: Context, sandbox: FsSandboxController): void
       ? ''
       : 'Read an existing file before overwriting it with write'
         + (ctx.tools.get('edit', scope) === undefined ? '' : ' and prefer edit for targeted changes')
+        + '. Never create documentation files (*.md) or README files unless the user explicitly requests them'
+        + '. Only use emojis if the user explicitly requests them'
         + '.',
     retirement: 'The write tool is no longer available. Its guidance no longer applies.',
   })

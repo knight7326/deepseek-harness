@@ -1177,7 +1177,7 @@ async function guidanceScope(ctx: Context) {
 
 const originalGuidance = {
   read: 'Use the read tool — not shell commands like cat, sed, head, or tail — to inspect text files. Use offset and limit to read a line range or continue a large file.',
-  write: 'Read an existing file before overwriting it with write and prefer edit for targeted changes.',
+  write: 'Read an existing file before overwriting it with write and prefer edit for targeted changes. Never create documentation files (*.md) or README files unless the user explicitly requests them. Only use emojis if the user explicitly requests them.',
   edit: 'Read a file before editing it unless you just created or edited it in this session.',
 }
 
