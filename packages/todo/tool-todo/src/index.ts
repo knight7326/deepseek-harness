@@ -52,7 +52,31 @@ const DESCRIPTION_PARALLEL =
 const DESCRIPTION_SINGLE =
   'While work remains, keep exactly one todo `in_progress`. '
 
-const DESCRIPTION_TAIL = 'Mark each todo `completed` as soon as it is done.'
+const DESCRIPTION_TAIL =
+  'Mark each todo `completed` as soon as it is done, but only when it is fully done — keep it '
+  + '`in_progress` while tests are failing, the work is partial, or errors are unresolved, and add a '
+  + 'todo for the blocker. Remove todos that are no longer relevant.'
+
+/**
+ * Closed-out guard ported from the Claude Code v2.1.88 todo tool: a call marking three or more todos
+ * all `completed` with none of them a verification step gets a rendered note to verify the result
+ * before the final summary. The rendered text stays a pure function of the logged output value.
+ */
+const VERIFICATION_NUDGE_MIN = 3
+const VERIFICATION_NUDGE =
+  ' NOTE: You just closed out 3+ tasks and none of them was a verification step. Before writing your '
+  + 'final summary, verify the result — run the relevant checks or re-read the changed files.'
+
+/**
+ * Whether a submitted list closes out without a verification step.
+ * @param todos - the validated list from one call.
+ * @returns whether the rendered result appends the verification note.
+ */
+function verificationNudgeNeeded(todos: Array<{ content: string; status: string }>): boolean {
+  return todos.length >= VERIFICATION_NUDGE_MIN
+    && todos.every(todo => todo.status === 'completed')
+    && !todos.some(todo => /verif/i.test(todo.content))
+}
 
 /**
  * The model-facing description for one activation. The active-status clause is the only part that
@@ -187,7 +211,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       },
       render: (_args, value) => [{
         type: 'text',
-        text: `Updated todo list: ${value.counts.pending} pending, ${value.counts.inProgress} in progress, ${value.counts.completed} completed.`,
+        text: `Updated todo list: ${value.counts.pending} pending, ${value.counts.inProgress} in progress, ${value.counts.completed} completed.`
+          + (verificationNudgeNeeded(value.todos) ? VERIFICATION_NUDGE : ''),
       }],
     },
     execute(args, exec) {

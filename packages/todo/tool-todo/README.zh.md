@@ -49,7 +49,7 @@ kind: "package-reference"
 
 ### 每次调用做什么
 
-agent 每次更新都发送完整列表；新列表替换旧列表，因此没有部分更新或逐项编辑。每个条目是一句简短的任务描述，外加 `pending`、`in_progress` 或 `completed` 状态。成功的更新会返回新的计数——`Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.`——UI 随即展示新计划。任务描述为空或重复、条目带有描述与状态之外的字段、或（禁用并行时）多个任务被标记为进行中，这些情况下更新都会明确失败。
+agent 每次更新都发送完整列表；新列表替换旧列表，因此没有部分更新或逐项编辑。每个条目是一句简短的任务描述，外加 `pending`、`in_progress` 或 `completed` 状态。成功的更新会返回新的计数——`Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.`——UI 随即展示新计划。当一次更新把三个或更多任务全部标记为 `completed`、其中没有任何验证步骤时，返回文本会在计数后附加一句验证提醒，要求 agent 在收尾前验证结果。任务描述为空或重复、条目带有描述与状态之外的字段、或（禁用并行时）多个任务被标记为进行中，这些情况下更新都会明确失败。
 
 ### 单一所有者
 
@@ -121,7 +121,7 @@ agent 每次更新都发送完整列表；新列表替换旧列表，因此没�
 
 #### 模型看到什么
 
-模型会看到生成的 [`todo_write` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-todo)：一个对象，含一个必填的 `todos` 数组，元素为 `{ content, status }`，其中 `status` 为 `pending`、`in_progress` 或 `completed`。`todos` 描述说明每次调用都会替换整个列表；工具描述中的活跃状态条款跟随 `allowParallelInProgress`。
+模型会看到生成的 [`todo_write` schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tool-todo)：一个对象，含一个必填的 `todos` 数组，元素为 `{ content, status }`，其中 `status` 为 `pending`、`in_progress` 或 `completed`。`todos` 描述说明每次调用都会替换整个列表；工具描述中的活跃状态条款跟随 `allowParallelInProgress`；完成条款固定——`completed` 只在任务真正做完时标记，仍被阻塞的任务保持 `in_progress`，并为阻塞项另加一条 todo。
 
 #### Token 影响
 
@@ -135,7 +135,7 @@ agent 每次更新都发送完整列表；新列表替换旧列表，因此没�
 
 #### 模型看到什么
 
-每次 assistant 工具调用都会在参数中保留整个替换列表。成功时原样返回 `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.`。稳定失败文本为 `Error: invalid arguments: todos[<i>].content must be a non-empty string`、`Error: invalid arguments: todos[<i>].content duplicates "<content>"`，以及——仅在部署设置 `allowParallelInProgress: false` 时——`Error: invalid arguments: at most one task may be in_progress (got <n>)`，均为 `ToolArgsError` `INVALID_ARGS`；另有 `ToolContextUnavailableError` `TOOL_CONTEXT_UNAVAILABLE` 的 `Error: todo_write requires an owning agent session`。完整的 `todo/write` 会话事件是 UI 与回放状态，而非第二条模型消息。
+每次 assistant 工具调用都会在参数中保留整个替换列表。成功时原样返回 `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.`；仅当该更新把三个或更多任务全部标记为 `completed`、其中没有任何验证步骤时，会在其后附加验证提醒。稳定失败文本为 `Error: invalid arguments: todos[<i>].content must be a non-empty string`、`Error: invalid arguments: todos[<i>].content duplicates "<content>"`，以及——仅在部署设置 `allowParallelInProgress: false` 时——`Error: invalid arguments: at most one task may be in_progress (got <n>)`，均为 `ToolArgsError` `INVALID_ARGS`；另有 `ToolContextUnavailableError` `TOOL_CONTEXT_UNAVAILABLE` 的 `Error: todo_write requires an owning agent session`。完整的 `todo/write` 会话事件是 UI 与回放状态，而非第二条模型消息。
 
 #### Token 影响
 

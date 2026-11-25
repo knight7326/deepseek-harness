@@ -49,7 +49,7 @@ The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-a
 
 ### What each call does
 
-The agent sends the ENTIRE list on every update; the new list replaces the previous one, so there are no partial updates or per-item edits. Each item is a short task description plus a status of `pending`, `in_progress`, or `completed`. A successful update returns the new counts — `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.` — and the UI shows the new plan. Updates fail visibly when a task description is empty or duplicated, when an item carries fields beyond the description and status, or — when parallel work is disabled — when more than one task is marked in progress.
+The agent sends the ENTIRE list on every update; the new list replaces the previous one, so there are no partial updates or per-item edits. Each item is a short task description plus a status of `pending`, `in_progress`, or `completed`. A successful update returns the new counts — `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.` — and the UI shows the new plan. When the update marks three or more tasks all `completed` and none of them is a verification step, the returned text appends a note asking the model to verify the result before the final summary. Updates fail visibly when a task description is empty or duplicated, when an item carries fields beyond the description and status, or — when parallel work is disabled — when more than one task is marked in progress.
 
 ### Single owner
 
@@ -121,7 +121,7 @@ Read these pages when the package-level contract is not enough. They move from t
 
 #### What the model sees
 
-The model sees the generated [`todo_write` schema](../../../docs/tool-catalog.md#deepseek-aidsh-tool-todo): an object with one required `todos` array of `{ content, status }` items, where `status` is `pending`, `in_progress`, or `completed`. The `todos` description states that each call replaces the whole list; the tool description's active-status clause follows `allowParallelInProgress`.
+The model sees the generated [`todo_write` schema](../../../docs/tool-catalog.md#deepseek-aidsh-tool-todo): an object with one required `todos` array of `{ content, status }` items, where `status` is `pending`, `in_progress`, or `completed`. The `todos` description states that each call replaces the whole list; the tool description's active-status clause follows `allowParallelInProgress`. Its completion clause is fixed: a todo is marked `completed` only when fully done, and a todo that is still blocked stays `in_progress` with a todo added for the blocker.
 
 #### Token effect
 
@@ -135,7 +135,7 @@ Prefix-stable while the definition and visibility are unchanged. Plugin lifecycl
 
 #### What the model sees
 
-Each assistant tool call retains the entire replacement list in its arguments. Success returns exactly `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.` Stable failures are `Error: invalid arguments: todos[<i>].content must be a non-empty string`, `Error: invalid arguments: todos[<i>].content duplicates "<content>"`, and — only where the deployment set `allowParallelInProgress: false` — `Error: invalid arguments: at most one task may be in_progress (got <n>)`, all `ToolArgsError` `INVALID_ARGS`, plus `Error: todo_write requires an owning agent session` as `ToolContextUnavailableError` `TOOL_CONTEXT_UNAVAILABLE`. The full `todo/write` session event is UI and replay state, not a second model message.
+Each assistant tool call retains the entire replacement list in its arguments. Success returns `Updated todo list: <pending> pending, <inProgress> in progress, <completed> completed.`, and appends the verification note exactly when that update closes out three or more tasks all marked `completed` with no verification step among them. Stable failures are `Error: invalid arguments: todos[<i>].content must be a non-empty string`, `Error: invalid arguments: todos[<i>].content duplicates "<content>"`, and — only where the deployment set `allowParallelInProgress: false` — `Error: invalid arguments: at most one task may be in_progress (got <n>)`, all `ToolArgsError` `INVALID_ARGS`, plus `Error: todo_write requires an owning agent session` as `ToolContextUnavailableError` `TOOL_CONTEXT_UNAVAILABLE`. The full `todo/write` session event is UI and replay state, not a second model message.
 
 #### Token effect
 

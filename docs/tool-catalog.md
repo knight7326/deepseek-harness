@@ -2634,7 +2634,7 @@ Four task-board tools share the subagent tree’s root Session. Enabling Team mo
 
 ### `todo_write`
 
-Record and update a task list to plan multi-step work and show progress; skip it for trivial single-step tasks. Add one todo per concrete step before you start. While work remains, keep the todos being worked on `in_progress`, several only when work runs in parallel. Mark each todo `completed` as soon as it is done.
+Record and update a task list to plan multi-step work and show progress; skip it for trivial single-step tasks. Add one todo per concrete step before you start. While work remains, keep the todos being worked on `in_progress`, several only when work runs in parallel. Mark each todo `completed` as soon as it is done, but only when it is fully done — keep it `in_progress` while tests are failing, the work is partial, or errors are unresolved, and add a todo for the blocker. Remove todos that are no longer relevant.
 
 ```json
 {

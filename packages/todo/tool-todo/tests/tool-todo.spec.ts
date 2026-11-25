@@ -219,6 +219,69 @@ describe('dsh-tool-todo', () => {
     expect(def.presentCall?.({ todos })).toEqual({ card: 'generic', title: 'Update todo list', kind: 'other', rawInput: todos })
   })
 
+  describe('verification nudge', () => {
+    it('appends the verification note when a 3+ task list closes out without a verification step', async () => {
+      const ctx = await setup(true)
+      const agent = agentWithSession('nudge')
+      const result = await callTodo(ctx, { todos: [
+        { content: 'write the code', status: 'completed' },
+        { content: 'add tests', status: 'completed' },
+        { content: 'update the docs', status: 'completed' },
+      ] }, { agent })
+      expect(result.isError).toBe(false)
+      const rendered = text(result)
+      expect(rendered).toContain('NOTE: You just closed out 3+ tasks and none of them was a verification step')
+      expect(rendered).toContain('verify the result — run the relevant checks or re-read the changed files')
+    })
+
+    it('does not nudge when the closed-out list includes a verification step', async () => {
+      const ctx = await setup(true)
+      const agent = agentWithSession('nudge')
+      const result = await callTodo(ctx, { todos: [
+        { content: 'write the code', status: 'completed' },
+        { content: 'add tests', status: 'completed' },
+        { content: 'Verify the build', status: 'completed' },
+      ] }, { agent })
+      expect(result.isError).toBe(false)
+      expect(text(result)).not.toContain('NOTE')
+    })
+
+    it('does not nudge when the closed-out list has fewer than three tasks', async () => {
+      const ctx = await setup(true)
+      const agent = agentWithSession('nudge')
+      const result = await callTodo(ctx, { todos: [
+        { content: 'write the code', status: 'completed' },
+        { content: 'add tests', status: 'completed' },
+      ] }, { agent })
+      expect(result.isError).toBe(false)
+      expect(text(result)).not.toContain('NOTE')
+    })
+
+    it('does not nudge while any task is still open', async () => {
+      const ctx = await setup(true)
+      const agent = agentWithSession('nudge')
+      const result = await callTodo(ctx, { todos: [
+        { content: 'write the code', status: 'completed' },
+        { content: 'add tests', status: 'completed' },
+        { content: 'ship it', status: 'in_progress' },
+      ] }, { agent })
+      expect(result.isError).toBe(false)
+      expect(text(result)).not.toContain('NOTE')
+    })
+
+    it('matches the verification step case-insensitively', async () => {
+      const ctx = await setup(true)
+      const agent = agentWithSession('nudge')
+      const result = await callTodo(ctx, { todos: [
+        { content: 'write the code', status: 'completed' },
+        { content: 'add tests', status: 'completed' },
+        { content: 'VERIFY the bundle', status: 'completed' },
+      ] }, { agent })
+      expect(result.isError).toBe(false)
+      expect(text(result)).not.toContain('NOTE')
+    })
+  })
+
   it('unregisters the tool when its contributing fiber is disposed (HMR-safety)', async () => {
     const ctx = new Context()
     await ctx.plugin(SessionProjectionRegistry)
